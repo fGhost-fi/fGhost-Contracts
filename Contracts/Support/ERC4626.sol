@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.14;
 
-pragma solidity ^0.8.0;
-
-import "../ERC20.sol";
-import "../utils/SafeERC20.sol";
-import "../../../interfaces/IERC4626.sol";
-import "../../../utils/math/Math.sol";
+import "./ERC20.sol";
+import "./SafeERC20.sol";
+import "./IERC4626.sol";
+import "./math/Math.sol";
 
 /**
  * @dev Implementation of the ERC4626 "Tokenized Vault Standard" as defined in
  * https://eips.ethereum.org/EIPS/eip-4626[EIP-4626].
- 
-    abstract contract ERC4626 is ERC20, IERC4626 {
-    using Math for uint256;
-
-    IERC20Metadata private immutable _asset;
-
     /**
      * @dev Set the underlying asset contract. This must be an ERC20-compatible contract (ERC20 or ERC777).
      */
+     abstract contract ERC4626 is ERC20, IERC4626{
+     using Math for uint256;
+     }
+     IERC20Metadata private immutable _asset;
+
     constructor(IERC20Metadata asset_) {
         _asset = asset_;
     }
