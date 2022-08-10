@@ -40,8 +40,8 @@ contract StakingRewards is Ownable {
         address _stakingToken,
         address[2] memory _rewardTokens
     ) external onlyOwner {
-        stakingToken = IERC20(_stakingToken);  // SOLIDsex
-        rewardTokens = _rewardTokens;  // SOLID, SEX
+        stakingToken = IERC20(_stakingToken);  
+        rewardTokens = _rewardTokens;  
 
         renounceOwnership();
     }
