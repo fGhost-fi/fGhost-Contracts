@@ -23,22 +23,36 @@ iMasterchefv2 MasterChef = iMasterchefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00
         string memory name,
         string memory symbol
         uint memory pid
+        address memory GhostFarmer
+        address memory Reward
     ) ERC20(name, symbol) ERC4626(asset) {};
+
         pid =_pid;
+        Reward = _Reward;
+        GhostFarmer = _GhostFarmer;
      function totalAssets() public view override returns (uint256) {
         return asset.balanceOf(address(this));
      }
     function beforeWithdraw (uint256, uint256) internal override{
+        SafeIncreaseAllowance(_asset, MasterChef, amount);
         MasterChef.Withdraw(address(this), _pid, uint amount, address(this));
+        SafeDecreaseAllowancw(_asset, MasterChef, 0);
          beforeWithdrawHookCalledCounter++;
     }
-    function afterDeposot( uint256, uint256) internal override{
+    function afterDeposit(uint256, uint256) internal override{
+         SafeIncreaseAllowance(_asset, MasterChef, amount);
         MasterChef.Deposit(address(this), _pid, uint amount, address(this));
-        afterWithdrawHookCalledCounter++;
+        SafeDecreaseAllowancw(_asset, MasterChef, 0);
+        afterDepositHookCalledCounter++;
     }
+
     function Harvest(){
-       MasterChef.PendingBOO(_pid, address(this)) return uint;
-        MasterChef.Harvest(address(this), _pid, _amount)
+       MasterChef.PendingBOO(_pid, address(this)) returns (uint){
+        return _amount;
+       };
+
+        MasterChef.Harvest(address(this), _pid, _amount);
+        SafeTransfer(_Reward, address(this), _GhostFarmer, balanceOf(address(_Reward)));
     }
 
 
