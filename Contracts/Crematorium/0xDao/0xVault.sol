@@ -11,7 +11,7 @@ interface UserProxyInterface{
    function claimStakingRewards(address stakingPoolAddress );
 }
 
-Contract SpookyVault is ERC4626{
+Contract 0xVault is ERC4626{
 IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF604085690c2);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
