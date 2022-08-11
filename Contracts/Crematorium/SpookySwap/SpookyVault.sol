@@ -4,7 +4,7 @@ pragma solidity ^0.8.14;
 import {ERC20} from "Contracts/Support/ERC20.sol";
 import "Contracts/Support/ERC4626.sol";
 
-interface iMasterchefv2{
+interface IMasterchefv2{
     
    function Deposit(address indexed user, uint indexed pid, uint amount, address indexed to);
    function Withdraw(address indexed user, uint indexed pid, uint amount, address indexed to);
@@ -13,7 +13,7 @@ interface iMasterchefv2{
 }
 
 Contract SpookyVault is ERC4626{
-iMasterchefv2 MasterChef = iMasterchefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4);
+IMasterchefv2 MasterChef = IMasterChefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
@@ -33,7 +33,7 @@ iMasterchefv2 MasterChef = iMasterchefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00
      function totalAssets() public view override returns (uint256) {
         return asset.balanceOf(address(this));
      }
-    function beforeWithdraw (uint256, uint256) internal override{
+    function beforeWithdraw (uint256 assets, uint256 shares) internal override{
         SafeIncreaseAllowance(_asset, MasterChef, amount);
         MasterChef.Withdraw(address(this), _pid, uint amount, address(this));
         SafeDecreaseAllowance(_asset, MasterChef, 0);
@@ -52,7 +52,7 @@ iMasterchefv2 MasterChef = iMasterchefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00
        };
 
         MasterChef.Harvest(address(this), _pid, _amount);
-        SafeTransfer(_Reward, address(this), _GhostFarmer, balanceOf(address(_Reward)));
+        SafeERC20.safeTransfer(_Reward, address(this), _GhostFarmer, balanceOf(address(_Reward)));
     }
 
 
