@@ -126,7 +126,7 @@ contract StakingRewards is Ownable {
         r.balance += reward;
     }
 
-    modifier updateReward(address account) {
+    modifier updateR0eward(address account) {
         for (uint i; i < rewardTokens.length; i++) {
             address token = rewardTokens[i];
             rewardData[token].rewardPerTokenStored = rewardPerToken(token);
