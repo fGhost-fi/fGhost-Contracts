@@ -6,7 +6,7 @@ import "Contracts/Support/ERC4626.sol";
 
 interface UserProxyInterface{
     
-   function depositLPandStake(address solidPoolAddress, uint256 amount);
+   function depositLpandStake(address solidPoolAddress, uint256 amount);
    function unstakeLpAndWithdraw(address solidPoolAddress, uint256 amount);
    function claimStakingRewards(address stakingPoolAddress );
 }
@@ -27,8 +27,8 @@ IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF60
     ) ERC20(name, symbol) ERC4626(asset) {};
         
         StakingPoolAddress = _StakingPoolAddress;
-        Reward = _Reward;
-        GhostFarmer = _GhostFarmer;
+        Reward = _reward;
+        GhostFarmer = _ghostFarmer;
      
      function totalAssets() public view override returns (uint256) {
         return asset.balanceOf(address(this));
@@ -46,7 +46,7 @@ IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF60
         afterDepositHookCalledCounter++;
     }
 
-    function Harvest(){
+    function Harvest() public{
     
     Proxy.claimStakingRewards(_StakingPoolAddress);
         SafeERC20.safeTransfer(_Reward, address(this), _GhostFarmer, balanceOf(address(_Reward)));
