@@ -36,13 +36,13 @@ iMasterchefv2 MasterChef = iMasterchefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00
     function beforeWithdraw (uint256, uint256) internal override{
         SafeIncreaseAllowance(_asset, MasterChef, amount);
         MasterChef.Withdraw(address(this), _pid, uint amount, address(this));
-        SafeDecreaseAllowancw(_asset, MasterChef, 0);
+        SafeDecreaseAllowance(_asset, MasterChef, 0);
          beforeWithdrawHookCalledCounter++;
     }
     function afterDeposit(uint256, uint256) internal override{
          SafeIncreaseAllowance(_asset, MasterChef, amount);
         MasterChef.Deposit(address(this), _pid, uint amount, address(this));
-        SafeDecreaseAllowancw(_asset, MasterChef, 0);
+        SafeDecreaseAllowance(_asset, MasterChef, 0);
         afterDepositHookCalledCounter++;
     }
 
