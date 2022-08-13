@@ -11,7 +11,7 @@ interface UserProxyInterface{
    function claimStakingRewards(address stakingPoolAddress );
 }
 
-Contract 0xVault is ERC4626{
+Contract 0xVault is ERC4626, ERC20{
 IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF604085690c2);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
@@ -20,11 +20,11 @@ IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF60
     constructor(
         IERC20Metadata asset,
         string memory name,
-        string memory symbol
-        address memory GhostFarmer
-        address memory Rewards
-        address memory StakingPoolAddress
-    ) ERC20(name, symbol) ERC4626(asset) {};
+        string memory symbol,
+        address memory GhostFarmer,
+        address memory Rewards,
+        address memory StakingPoolAddress)
+    ERC20(name, symbol) ERC4626(asset) {};
         
         StakingPoolAddress = _StakingPoolAddress;
         Reward = _reward;
