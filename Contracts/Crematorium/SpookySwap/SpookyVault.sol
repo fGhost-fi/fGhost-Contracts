@@ -12,7 +12,7 @@ interface IMasterchefv2{
    function PendingBOO( uint indexed pid, address indexed user);
 }
 
-Contract SpookyVault is ERC4626, ERC20{
+contract SpookyVault is ERC4626, ERC20{
 IMasterchefv2 MasterChef = IMasterChefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
