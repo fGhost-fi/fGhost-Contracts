@@ -2,17 +2,17 @@
 pragma solidity ^0.8.14;
 
 import {ERC20} from "Contracts/Support/ERC20.sol";
-import "Contracts/Support/ERC4626.sol";
+import {ERC4636} from "Contracts/Support/ERC4626.sol";
 
 interface UserProxyInterface{
     
-   function depositLpandStake(address solidPoolAddress, uint256 amount);
-   function unstakeLpAndWithdraw(address solidPoolAddress, uint256 amount);
-   function claimStakingRewards(address stakingPoolAddress );
+   event depositLpandStake(address solidPoolAddress, uint256 amount);
+   event unstakeLpAndWithdraw(address solidPoolAddress, uint256 amount);
+   event claimStakingRewards(address stakingPoolAddress );
 }
 
 contract OxVault is ERC4626, ERC20{
-IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF604085690c2);
+IUserProxyInterface constant Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF604085690c2);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
@@ -30,7 +30,7 @@ IUserProxyInterface Proxy = UserProxyInterface(0xD2f585C41cca33dce5227C8DF6aDF60
         Reward = _reward;
         GhostFarmer = _ghostFarmer;
      
-     function totalAssets() public view override returns (uint256) {
+     function totalAssets() external view override returns (uint256) {
         return asset.balanceOf(address(this));
      }
     function beforeWithdraw (uint256 assets, uint256 shares) internal override{
