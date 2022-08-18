@@ -26,11 +26,14 @@ address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
         IERC20Metadata asset,
         string memory name,
         string memory symbol,
-        uint memory pid,
-        address memory GhostFarmer,
-        address memory Reward
+        uint pid,
+        address GhostFarmer,
+        address Reward
     ) ERC20(name, symbol) ERC4626(asset) { 
-        uint _pid = pid;
+     uint _pid = pid;
+     address _ghostFarmer = GhostFarmer;
+     address _reward = Reward;
+
         }
        
         
@@ -39,26 +42,24 @@ address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
      }
     function beforeWithdraw (uint256 assets, uint256 shares) internal override{
        ERC20.SafeIncreaseAllowance(address(asset),address(MasterChef), uint (assets));
-        IMasterChef.withdraw(uint(pid), uint (assets), address(this));
+        IMasterChef.withdraw( _pid, address(this), uint (assets));
         ERC20.safeDecreaseAllowance(address(asset), address(MasterChef), 0);
          beforeWithdrawHookCalledCounter++;
     }
     function afterDeposit(uint256 assets, uint256 shares) internal override{
          ERC20.safeIncreaseAllowance(asset, address(MasterChef), assets);
-        IMasterChef.deposit(address(this),uint(_pid), assets, address(this));
+        IMasterChef.deposit(uint(pid), uint (assets));
         ERC20.safeDecreaseAllowance(asset, address(MasterChef), 0);
         afterDepositHookCalledCounter++;
     }
 
-    function Harvest() external{
-     uint amount = IMasterChef.pendingBOO(uint(_pid), address(this));
+    function Harvest(uint pid, address _reward, address _ghostFarmer) external{
+     uint amount = IMasterChef.pendingBOO(uint(pid), address(this));
        {
 
         IMasterChef.Harvest(address(this),uint(pid), amount);
-        ERC20.safeTransfer(Reward, address(this), address(GhostFarmer), balanceOf(address(Reward)));
+        ERC20.safeTransfer(address(_reward), address(this), address(_ghostFarmer), balanceOf(address(_reward)));
     }
 
     }
 }
-
-
