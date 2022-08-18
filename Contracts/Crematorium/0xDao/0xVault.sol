@@ -2,7 +2,7 @@
 pragma solidity ^0.8.14;
 
 import {ERC20} from "Contracts/Support/ERC20.sol";
-import {ERC4636} from "Contracts/Support/ERC4626.sol";
+import {ERC4626} from "Contracts/Support/ERC4626.sol";
 
 interface UserProxyInterface{
     
