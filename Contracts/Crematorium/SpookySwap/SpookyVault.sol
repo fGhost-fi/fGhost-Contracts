@@ -6,14 +6,14 @@ import {ERC4626} from "Contracts/Support/ERC4626.sol";
 
 interface IMasterchefv2{
     
-   function Deposit(address indexed user, uint indexed pid, uint amount, address indexed to);
-   function Withdraw(address indexed user, uint indexed pid, uint amount, address indexed to);
-   function Harvest(address indexed user, uint indexed pid, uint amount );
-   function PendingBOO( uint indexed pid, address indexed user);
+   event Deposit(address indexed user, uint indexed pid, uint amount, address indexed to);
+   event Withdraw(address indexed user, uint indexed pid, uint amount, address indexed to);
+   event Harvest(address indexed user, uint indexed pid, uint amount );
+   event PendingBOO( uint indexed pid, address indexed user);
 }
 
 contract SpookyVault is ERC4626, ERC20{
-IMasterchefv2 MasterChef = IMasterChefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4);
+IMasterchefv2 constant MasterChef = IMasterChefv2(0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
