@@ -7,10 +7,10 @@ import "contracts/Support/IERC20Metadata.sol";
 
 interface IMasterChef{
     
-   function deposit(uint pid, uint amount)external;
-   function withdraw(uint pid, uint amount, address to) external;
-   function Harvest(address user, uint pid, uint amount) external;
-   function pendingBOO(uint _pid, address _user) external;
+   function deposit(uint pid, uint amount)external{};
+   function withdraw(uint pid, uint amount, address to) external{};
+   function Harvest(address user, uint pid, uint amount) external{};
+   function pendingBOO(uint _pid, address _user) external{} ;
 }
 
 
