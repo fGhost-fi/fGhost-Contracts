@@ -1,26 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
-import {ERC20} from "contracts/Support/ERC20.sol";
-import {ERC4626} from "contracts/Support/ERC4626.sol";
-import "contracts/Support/IERC20Metadata.sol";
+import {ERC20} from "Contracts/Support/ERC20.sol";
+import {ERC4626} from "Contracts/Support/ERC4626.sol";
+import "Contracts/Support/IERC20Metadata.sol";
+import "Contracts/Support/SafeERC20.sol";
 
 interface IMasterChef{
     
    function deposit(uint pid, uint amount)external;
-   function withdraw(uint pid, uint amount, address to) external;
+   function withdraw(uint pid, uint amount) external;
    function Harvest(address user, uint pid, uint amount) external;
    function pendingBOO(uint _pid, address _user) external;
 }
 
-
-
 contract SpookyVault is ERC4626{
+   using SafeERC20 for IERC20;
     
 address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
+IMasterChef mc = IMasterChef(MasterChef);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
+    
+      uint public _pid;
+      address public _ghostFarmer;
+      IERC20 public _reward;
+      IERC20 public immutable _asset;
 
     constructor(
         IERC20Metadata asset,
@@ -28,38 +34,33 @@ address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
         string memory symbol,
         uint pid,
         address GhostFarmer,
-        address Reward
+        IERC20 Reward,
+        IERC20 _asset
     ) ERC20(name, symbol) ERC4626(asset) { 
-     uint _pid = pid;
-     address _ghostFarmer = GhostFarmer;
-     address _reward = Reward;
-
+      pid = _pid;
+      GhostFarmer = _ghostFarmer;
+      Reward = _reward;
+      _asset = asset;
         }
-       
-        
-     function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this));
-     }
+
     function beforeWithdraw (uint256 assets, uint256 shares) internal override{
-       ERC20.SafeIncreaseAllowance(address(asset),address(MasterChef), uint (assets));
-        IMasterChef.withdraw( _pid, address(this), uint (assets));
-        ERC20.safeDecreaseAllowance(address(asset), address(MasterChef), 0);
+       SafeERC20.safeApprove(_asset, MasterChef, uint (assets));
+        mc.withdraw( _pid, uint (assets));
+        SafeERC20.safeDecreaseAllowance(_asset, MasterChef, 0);
          beforeWithdrawHookCalledCounter++;
     }
     function afterDeposit(uint256 assets, uint256 shares) internal override{
-         ERC20.safeIncreaseAllowance(asset, address(MasterChef), assets);
-        IMasterChef.deposit(uint(pid), uint (assets));
-        ERC20.safeDecreaseAllowance(asset, address(MasterChef), 0);
+         SafeERC20.safeApprove(_asset, MasterChef, assets);
+        mc.deposit(uint(_pid), uint (assets));
+        SafeERC20.safeDecreaseAllowance(_asset, address(MasterChef), 0);
         afterDepositHookCalledCounter++;
     }
 
-    function Harvest(uint pid, address _reward, address _ghostFarmer) external{
-     uint amount = IMasterChef.pendingBOO(uint(pid), address(this));
-       {
-
-        IMasterChef.Harvest(address(this),uint(pid), amount);
-        ERC20.safeTransfer(address(_reward), address(this), address(_ghostFarmer), balanceOf(address(_reward)));
+    function harvest() external{
+       uint amount = mc.pendingBOO(uint(_pid), address(this));
+       
+       mc.Harvest(address(this),uint(_pid), amount);
+       SafeERC20.safeTransfer(_reward, address(_ghostFarmer), balanceOf(address(_reward)));
     }
 
     }
-}
