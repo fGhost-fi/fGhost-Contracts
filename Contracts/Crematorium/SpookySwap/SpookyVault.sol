@@ -11,8 +11,8 @@ interface IMasterChef{
     
    function deposit(uint pid, uint amount)external;
    function withdraw(uint pid, uint amount) external;
-   function Harvest(address user, uint pid, uint amount) external;
-   function pendingBOO(uint _pid, address _user) external view returns(uint);
+   function harvest(address user, uint pid, uint amount) external;
+   function pendingBOO(uint _pid, address _user) external view returns(uint pending);
 }
 
 contract SpookyVault is ERC4626{
@@ -36,8 +36,7 @@ IMasterChef mc = IMasterChef(MasterChef);
         string memory symbol,
         uint pid,
         address GhostFarmer,
-        IERC20 Reward,
-        IERC20 _asset
+        IERC20 Reward      
     ) ERC20(name, symbol) ERC4626(asset) { 
       pid = _pid;
       GhostFarmer = _ghostFarmer;
@@ -54,18 +53,20 @@ IMasterChef mc = IMasterChef(MasterChef);
     function afterDeposit(uint256 assets, uint256) internal override{
          SafeERC20.safeApprove(_asset, MasterChef, assets);
         mc.deposit(uint(_pid), uint (assets));
-        SafeERC20.safeDecreaseAllowance(_asset, address(MasterChef), 0);
+        SafeERC20.safeDecreaseAllowance(_asset, MasterChef, 0);
         afterDepositHookCalledCounter++;
     }
 
     function harvest() external{
       uint amount = mc.pendingBOO(uint(_pid), address(this));
 
-       mc.Harvest(address(this),uint(_pid), amount);
+       mc.harvest(address(this),uint(_pid), amount);
        SafeERC20.safeTransfer(_reward, address(_ghostFarmer), balanceOf(address(_reward)));
     }
          
       }
     
+
+
 
 
