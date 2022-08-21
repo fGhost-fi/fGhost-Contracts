@@ -15,8 +15,16 @@ contract OxVault is ERC4626{
 
 address constant Proxy = 0xD2f585C41cca33dce5227C8DF6aDF604085690c2;
 
+UserProxyInterface constant Ox = UserProxyInterface(Proxy);
+
+address constant Proxy = 0xD2f585C41cca33dce5227C8DF6aDF604085690c2;
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
+ address public _ghostFarmer;
+ IERC20 public _reward;
+ IERC20 public _asset;
+ address public _stakingPoolAddress;
+ address public _solidPoolAddress;
 
     constructor(
         IERC20Metadata asset,
