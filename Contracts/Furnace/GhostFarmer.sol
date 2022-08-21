@@ -76,6 +76,7 @@ function push() public {
     _totalTokenReleased = _totalTokenReleased + payment;
    while (i < _payees.length) {IERC20(paymentToken).safeTransfer(account, payment);
     slot +=1;
+    i ++;
     }
 }
 }
