@@ -4,8 +4,6 @@ pragma solidity ^0.8.14;
 import {ERC20} from "Contracts/Support/ERC20.sol";
 import {ERC4626} from "Contracts/Support/ERC4626.sol";
 import "Contracts/Support/IERC20Metadata.sol";
-import "Contracts/Support/SafeERC20.sol";
-import "Contracts/Support/Math/SafeMath.sol";
 
 interface IMasterChef{
     
@@ -17,7 +15,6 @@ interface IMasterChef{
 
 contract SpookyVault is ERC4626{
    using SafeERC20 for IERC20;
-   using SafeMath for uint;
     
 address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
 IMasterChef mc = IMasterChef(MasterChef);

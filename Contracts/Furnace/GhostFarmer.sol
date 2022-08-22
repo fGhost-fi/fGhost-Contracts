@@ -57,7 +57,7 @@ function _addPayee(address account, uint256 shares_) internal {
 
      emit PaymentReleased(account, payment);
 }
-function addPayee(address account, uint256 shares_) public onlyOwner {
+function addPayee(address account, uint256 shares_) external onlyOwner {
     require(
         account != address(0),
         "GhostFarmer: account is the zero address"
