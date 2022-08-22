@@ -6,7 +6,7 @@ import "Contracts/Support/SafeERC20.sol";
 import "Contracts/Support/IERC20.sol";
 
 
-contract StakingRewards is Ownable {
+contract MultiRewarder is Ownable {
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
@@ -61,7 +61,7 @@ contract StakingRewards is Ownable {
             rewardData[_rewardsToken].rewardPerTokenStored + pending;
     }
 
-    function earned(address account, address _rewardsToken) public view returns (uint256) {
+    function earned(address account, address _rewardsToken) external view returns (uint256) {
         uint256 rpt = rewardPerToken(_rewardsToken) - userRewardPerTokenPaid[account][_rewardsToken];
         return balanceOf[account] * rpt / 1e18 + rewards[account][_rewardsToken];
     }
