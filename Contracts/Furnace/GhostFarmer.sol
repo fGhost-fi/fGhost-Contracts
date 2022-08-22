@@ -7,6 +7,9 @@ import "Contracts/Support/utils/Ownable.sol";
 contract GhostFarmer is Ownable{
         using SafeERC20 for IERC20;
     
+   event PayeeAdded(address account, uint256 shares);
+   event PaymentReleased(address to, uint256 amount);
+
     address internal paymentToken;
     uint256 internal _totalShares;
     uint256 internal _totalTokenReleased;
@@ -51,6 +54,8 @@ function _addPayee(address account, uint256 shares_) internal {
     _payees.push(account);
     _shares[account] = shares_;
     _totalShares = _totalShares + shares_;
+
+     emit PaymentReleased(account, payment);
 }
 function addPayee(address account, uint256 shares_) public onlyOwner {
     require(
@@ -78,5 +83,7 @@ function push() public {
     slot ++;
     i ++;
     }
+      emit PaymentReleased(account, payment);
 }
+ 
 }
