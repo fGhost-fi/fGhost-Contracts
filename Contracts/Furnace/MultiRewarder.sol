@@ -19,7 +19,7 @@ contract MultiRewarder is Ownable {
         uint256 balance;
     }
     IERC20 public stakingToken;
-    address[2] public rewardTokens;
+    address[] public rewardTokens;
     mapping(address => Reward) public rewardData;
 
     // user -> reward token -> amount
@@ -38,12 +38,11 @@ contract MultiRewarder is Ownable {
 
     function setAddresses(
         address _stakingToken,
-        address[2] memory _rewardTokens
+        address[] memory _rewardTokens
     ) external onlyOwner {
         stakingToken = IERC20(_stakingToken);  
         rewardTokens = _rewardTokens;  
 
-        renounceOwnership();
     }
 
     function lastTimeRewardApplicable(address _rewardsToken) public view returns (uint256) {
@@ -125,7 +124,10 @@ contract MultiRewarder is Ownable {
         r.periodFinish = block.timestamp + REWARDS_DURATION;
         r.balance += reward;
     }
-
+        function addReward(address newReward)external onlyOwner{
+             require(newReward != address(0));
+             
+        }
     modifier updateReward(address account) {
         for (uint i; i < rewardTokens.length; i++) {
             address token = rewardTokens[i];

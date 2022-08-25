@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'Contracts/Support/IERC20.sol';
-import 'Contracts/Support/SafeERC20.sol';
-import 'Contracts/Support/math/SafeMath.sol';
-import 'Contracts/Support/utils/Ownable.sol';
-import "Contracts/Support/ERC20.sol"; 
+import "Contracts/Support/IERC20.sol";
+import "Contracts/Support/SafeERC20.sol";
+import "Contracts/Support/Math/SafeMath.sol";
+import "Contracts/Support/utils/Ownable.sol";
+import "./Fghost.sol"; 
 
 // The fGhost's GhostChef is a fork of 0xDao Garden by 0xDaov1
 // The biggest change made from SushiSwap is using per second instead of per block for rewards
@@ -43,11 +43,11 @@ contract MasterChef is Ownable {
         IERC20 lpToken;           // Address of LP token contract.
         uint256 allocPoint;       // How many allocation points assigned to this pool. FGHSTs to distribute per block.
         uint256 lastRewardTime;  // Last block time that FGHSTs distribution occurs.
-        uint256 accOXDPerShare; // Accumulated OXDs per share, times 1e12. See below.
+        uint256 accFGHSTPerShare; // Accumulated OXDs per share, times 1e12. See below.
     }
 
     // such a cool token!
-    FGHST public fghst;
+    fGhost public fghst;
 
     // FGHST tokens created per second.
     uint256 public immutable FGHSTPerSecond;
@@ -68,12 +68,12 @@ contract MasterChef is Ownable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
-        FGHST _fghst,
+        fGhost _fghst,
         uint256 _fghstPerSecond,
         uint256 _startTime
     ) {
         fghst = _fghst;
-        fghstPerSecond = _fghstPerSecond;
+        FGHSTPerSecond = _fghstPerSecond;
         startTime = _startTime;
     }
 
@@ -134,7 +134,7 @@ contract MasterChef is Ownable {
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardTime, block.timestamp);
-            uint256 FGHSTReward = multiplier.mul(fghstPerSecond).mul(pool.allocPoint).div(totalAllocPoint);
+            uint256 FGHSTReward = multiplier.mul(FGHSTPerSecond).mul(pool.allocPoint).div(totalAllocPoint);
             accFGHSTPerShare = accFGHSTPerShare.add(FGHSTReward.mul(1e12).div(lpSupply));
         }
         return user.amount.mul(accFGHSTPerShare).div(1e12).sub(user.rewardDebt);
@@ -160,8 +160,9 @@ contract MasterChef is Ownable {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardTime, block.timestamp);
-        uint256 FGHSTReward = multiplier.mul(fghstPerSecond).mul(pool.allocPoint).div(totalAllocPoint);
+        uint256 FGHSTReward = multiplier.mul(FGHSTPerSecond).mul(pool.allocPoint).div(totalAllocPoint);
 
+        
         fghst.mint(address(this), FGHSTReward);
 
         pool.accFGHSTPerShare = pool.accFGHSTPerShare.add(FGHSTReward.mul(1e12).div(lpSupply));
