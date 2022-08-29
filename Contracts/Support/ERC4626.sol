@@ -4,8 +4,7 @@ pragma solidity ^0.8.14;
 import "./ERC20.sol";
 import "./SafeERC20.sol";
 import "./IERC4626.sol";
-import "./math/Math.sol";
-
+import "./Math/Math.sol";
 /**
  * @dev Implementation of the ERC4626 "Tokenized Vault Standard" as defined in
  * https://eips.ethereum.org/EIPS/eip-4626[EIP-4626].
@@ -14,15 +13,15 @@ import "./math/Math.sol";
      */
      abstract contract ERC4626 is ERC20, IERC4626{
      using Math for uint256;
-     }
+     
      IERC20Metadata private immutable _asset;
 
     constructor(IERC20Metadata asset_) {
         _asset = asset_;
     }
-function beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
+function beforeWithdraw(uint256 assets) internal virtual {}
 
-function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+function afterDeposit(uint256 assets) internal virtual {}
 
     /** @dev See {IERC4262-asset} */
     function asset() public view virtual override returns (address) {
@@ -85,12 +84,11 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
     }
 
     /** @dev See {IERC4262-deposit} */
-    function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {
-        require(assets <= maxDeposit(receiver), "ERC4626: deposit more than max");
+    function deposit(uint256 assets) public virtual override returns (uint256) {
+        require(assets <= maxDeposit(address(this)), "ERC4626: deposit more than max");
 
         uint256 shares = previewDeposit(assets);
-        _deposit(_msgSender(), receiver, assets, shares);
-        afterDeposit(assets, shares);
+        _deposit(_msgSender(), address(this), assets, shares);
         return shares;
     }
 
@@ -99,35 +97,31 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
         require(shares <= maxMint(receiver), "ERC4626: mint more than max");
 
         uint256 assets = previewMint(shares);
-        _deposit(_msgSender(), receiver, assets, shares);
-
+        _deposit(_msgSender(), _msgSender(), assets, shares);
+        
         return assets;
     }
 
     /** @dev See {IERC4262-withdraw} */
     function withdraw(
         uint256 assets,
-        address receiver,
         address owner
     ) public virtual override returns (uint256) {
         require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
-
         uint256 shares = previewWithdraw(assets);
-        beforeWithdraw(assets, shares);
-        _withdraw(_msgSender(), receiver, owner, assets, shares);
+        _withdraw(address(this), _msgSender(), owner, assets, shares);
         return shares;
     }
 
     /** @dev See {IERC4262-redeem} */
     function redeem(
         uint256 shares,
-        address receiver,
         address owner
     ) public virtual override returns (uint256) {
         require(shares <= maxRedeem(owner), "ERC4626: redeem more than max");
 
         uint256 assets = previewRedeem(shares);
-        _withdraw(_msgSender(), receiver, owner, assets, shares);
+        _withdraw(_msgSender(), _msgSender(), owner, assets, shares);
 
         return assets;
     }
@@ -174,8 +168,8 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
         // assets are transfered and before the shares are minted, which is a valid state.
         // slither-disable-next-line reentrancy-no-eth
         SafeERC20.safeTransferFrom(_asset, caller, address(this), assets);
-        _mint(receiver, shares);
-
+        _mint(_msgSender(), shares);
+        afterDeposit(assets);
         emit Deposit(caller, receiver, assets, shares);
     }
 
@@ -192,7 +186,7 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
-
+          beforeWithdraw(shares);
         // If _asset is ERC777, `transfer` can trigger trigger a reentrancy AFTER the transfer happens through the
         // `tokensReceived` hook. On the other hand, the `tokensToSend` hook, that is triggered before the transfer,
         // calls the vault, which is assumed not malicious.
@@ -200,6 +194,7 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
         // Conclusion: we need to do the transfer after the burn so that any reentrancy would happen after the
         // shares are burned and after the assets are transfered, which is a valid state.
         _burn(owner, shares);
+         
         SafeERC20.safeTransfer(_asset, receiver, assets);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
@@ -209,3 +204,4 @@ function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
         return totalAssets() > 0 || totalSupply() == 0;
     }
 
+     }

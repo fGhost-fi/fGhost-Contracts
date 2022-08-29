@@ -1,8 +1,3 @@
-
-
-
-
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
@@ -16,15 +11,14 @@ interface IMasterChef{
     
    function deposit(uint pid, uint amount)external;
    function withdraw(uint pid, uint amount) external;
-   function harvest(address user, uint pid, uint amount) external;
-   function pendingBOO(uint _pid, address _user) external view returns(uint pending);
+   function userInfo(uint256 pid, address owner) external returns (uint256);
 }
 
 contract SpookyVault is ERC4626{
    using SafeERC20 for IERC20;
    using SafeMath for uint;
     
-address constant MasterChef = 0x9C9C920E51778c4ABF727b8Bb223e78132F00aA4;
+address constant MasterChef = 0x18b4f774fdC7BF685daeeF66c2990b1dDd9ea6aD;
 IMasterChef mc = IMasterChef(MasterChef);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
@@ -34,7 +28,7 @@ IMasterChef mc = IMasterChef(MasterChef);
       address public _ghostFarmer;
       IERC20 public  _reward;
       IERC20 public  _asset;
-
+      uint256 public _totalAssets;
     constructor(
         IERC20Metadata asset,
         string memory name,
@@ -50,9 +44,10 @@ IMasterChef mc = IMasterChef(MasterChef);
         }
 
     function beforeWithdraw (uint256 assets) internal override{
-       IERC20(_asset).safeApprove( MasterChef, assets);
-        mc.withdraw( _pid, assets);
-       IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+         IERC20(_asset).safeApprove(MasterChef, assets);
+          mc.withdraw( _pid, assets);
+            IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+          _totalAssets = mc.userInfo(_pid, address(this));
          beforeWithdrawHookCalledCounter++;
     }
 
@@ -60,6 +55,7 @@ IMasterChef mc = IMasterChef(MasterChef);
          IERC20(_asset).safeApprove(MasterChef, assets);
         mc.deposit(uint(_pid), assets);
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+        _totalAssets = mc.userInfo(_pid, address(this));
         afterDepositHookCalledCounter++;
     }
 
@@ -68,7 +64,13 @@ IMasterChef mc = IMasterChef(MasterChef);
         IERC20(_asset).safeApprove(MasterChef, 20000);
         mc.withdraw( _pid, 0);
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
-       IERC20(_reward).safeTransfer(address(_ghostFarmer), balanceOf(address(_reward)));
+       IERC20(_reward).safeTransfer(address(_ghostFarmer), IERC20(_reward).balanceOf(address(this)));
     }
-         
-      }
+
+    function totalAssets () public view override returns (uint256) {
+    return _totalAssets;
+      
+    }
+
+}
+    
