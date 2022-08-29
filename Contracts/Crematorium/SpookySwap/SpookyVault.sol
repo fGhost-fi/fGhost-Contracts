@@ -1,3 +1,8 @@
+
+
+
+
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.14;
 
@@ -25,11 +30,10 @@ IMasterChef mc = IMasterChef(MasterChef);
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
     
-      uint public _pid;
+      uint256 public _pid;
       address public _ghostFarmer;
       IERC20 public  _reward;
       IERC20 public  _asset;
-      address public _ghostChef;
 
     constructor(
         IERC20Metadata asset,
@@ -37,41 +41,34 @@ IMasterChef mc = IMasterChef(MasterChef);
         string memory symbol,
         uint  pid,
         address GhostFarmer,
-        IERC20 Reward,      
-        address GhostChef
+        IERC20 Reward
     ) ERC20(name, symbol) ERC4626(asset) { 
       _pid = pid;
       _ghostFarmer = GhostFarmer;
       _reward = Reward;
       _asset = asset;
-      _ghostChef = GhostChef;
         }
 
-    function beforeWithdraw (uint256 assets,uint256) internal override{
-       SafeERC20.safeApprove(_asset, MasterChef, uint (assets));
-        mc.withdraw( _pid, uint (assets));
-        SafeERC20.safeDecreaseAllowance(_asset, MasterChef, 0);
+    function beforeWithdraw (uint256 assets) internal override{
+       IERC20(_asset).safeApprove( MasterChef, assets);
+        mc.withdraw( _pid, assets);
+       IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
          beforeWithdrawHookCalledCounter++;
     }
 
-    function afterDeposit(uint256 assets, uint256) internal override{
-         SafeERC20.safeApprove(_asset, MasterChef, assets);
-        mc.deposit(uint(_pid), uint (assets));
-        SafeERC20.safeDecreaseAllowance(_asset, MasterChef, 0);
+    function afterDeposit(uint256 assets) internal override{
+         IERC20(_asset).safeApprove(MasterChef, assets);
+        mc.deposit(uint(_pid), assets);
+        IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
         afterDepositHookCalledCounter++;
     }
 
     function harvest() external{
 
-        SafeERC20.safeApprove(_asset, MasterChef, 20000);
+        IERC20(_asset).safeApprove(MasterChef, 20000);
         mc.withdraw( _pid, 0);
-        SafeERC20.safeDecreaseAllowance(_asset, MasterChef, 0);
-       SafeERC20.safeTransfer(_reward, address(_ghostFarmer), balanceOf(address(_reward)));
+        IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+       IERC20(_reward).safeTransfer(address(_ghostFarmer), balanceOf(address(_reward)));
     }
          
       }
-    
-
-
-
-
