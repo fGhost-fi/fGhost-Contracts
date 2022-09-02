@@ -6,7 +6,7 @@ import "Contracts/Support/SafeERC20.sol";
 import "Contracts/Support/IERC20.sol";
 
 
-contract MultiRewarder is Ownable {
+contract StakingRewards is Ownable {
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
@@ -21,6 +21,7 @@ contract MultiRewarder is Ownable {
     IERC20 public stakingToken;
     address[] public rewardTokens;
     mapping(address => Reward) public rewardData;
+    bool internal isReward;
 
     // user -> reward token -> amount
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
@@ -39,7 +40,7 @@ contract MultiRewarder is Ownable {
     function setAddresses(
         address _stakingToken,
         address[] memory _rewardTokens
-    ) external onlyOwner {
+    ) external onlyOwner { 
         stakingToken = IERC20(_stakingToken);  
         rewardTokens = _rewardTokens;  
 
@@ -60,13 +61,17 @@ contract MultiRewarder is Ownable {
             rewardData[_rewardsToken].rewardPerTokenStored + pending;
     }
 
-    function earned(address account, address _rewardsToken) external view returns (uint256) {
+    function earned(address account, address _rewardsToken) public view returns (uint256) {
         uint256 rpt = rewardPerToken(_rewardsToken) - userRewardPerTokenPaid[account][_rewardsToken];
         return balanceOf[account] * rpt / 1e18 + rewards[account][_rewardsToken];
     }
 
     function getRewardForDuration(address _rewardsToken) external view returns (uint256) {
         return rewardData[_rewardsToken].rewardRate * REWARDS_DURATION;
+    }
+
+    function getLength() public view returns(uint length){
+        return rewardTokens.length;
     }
 
     function stake(uint256 amount) external updateReward(msg.sender) {
@@ -105,6 +110,12 @@ contract MultiRewarder is Ownable {
             }
         }
     }
+    function getBalance(address user) external view returns (uint256){
+        return balanceOf[user];
+    }
+    function listRewards(uint i) external view returns (address _reward){
+        return rewardTokens[i];
+    }
 
     function exit() external {
         withdraw(balanceOf[msg.sender]);
@@ -124,10 +135,7 @@ contract MultiRewarder is Ownable {
         r.periodFinish = block.timestamp + REWARDS_DURATION;
         r.balance += reward;
     }
-        function addReward(address newReward)external onlyOwner{
-             require(newReward != address(0));
-             
-        }
+
     modifier updateReward(address account) {
         for (uint i; i < rewardTokens.length; i++) {
             address token = rewardTokens[i];

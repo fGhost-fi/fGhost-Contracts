@@ -13,7 +13,7 @@ interface IMultiRewarder {
      function getReward() external;
      function getLength() external view returns(uint);
      function listRewards(uint i) external view returns (address _reward);
-
+     function getBalance(address) external view returns (uint256);
 }
 
 contract xGhostVault is ERC4626{
@@ -28,6 +28,7 @@ contract xGhostVault is ERC4626{
    uint internal _rewardsPerToken = _totalReward / _totalShares; 
    uint public balanceOwed = _rewardsPerToken * ERC20.balanceOf(msg.sender);
    uint internal rewardLength = multi.getLength();
+   uint public _totalAssets;
    uint256 public beforeWithdrawHookCalledCounter = 0;
    uint256 public afterDepositHookCalledCounter = 0;
     
@@ -41,16 +42,18 @@ contract xGhostVault is ERC4626{
             _asset = asset;
          }
 
-         function beforeWithdraw (uint256 assets,uint256) internal override{
+         function beforeWithdraw (uint256 assets) internal override{
         SafeERC20.safeApprove(_asset, MultiRewarder, uint (assets));
         multi.withdraw(assets);
         SafeERC20.safeDecreaseAllowance(_asset, MultiRewarder, 0);
+        multi.getBalance(address(this));
          beforeWithdrawHookCalledCounter++;}
 
-         function afterDeposit(uint256 assets, uint256) internal override{
+         function afterDeposit(uint256 assets) internal override{
          SafeERC20.safeApprove(_asset, MultiRewarder, assets);
         multi.stake( uint (assets));
         SafeERC20.safeDecreaseAllowance(_asset, MultiRewarder, 0);
+        multi.getBalance(address(this));
         afterDepositHookCalledCounter++;
     }
         
@@ -71,5 +74,7 @@ contract xGhostVault is ERC4626{
 
 
          }
-
+function totalAssets() public view override returns (uint256){
+    return _totalAssets;
+}
         }

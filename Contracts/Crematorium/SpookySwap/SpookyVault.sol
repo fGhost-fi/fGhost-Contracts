@@ -11,6 +11,7 @@ interface IMasterChef{
     
    function deposit(uint pid, uint amount)external;
    function withdraw(uint pid, uint amount) external;
+   function harvest(address user, uint pid, uint amount) external;
    function userInfo(uint256 pid, address owner) external returns (uint256);
 }
 
@@ -44,6 +45,8 @@ IMasterChef mc = IMasterChef(MasterChef);
         }
 
     function beforeWithdraw (uint256 assets) internal override{
+          if (_asset.allowance((address(this)), MasterChef) > 0){
+      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
          IERC20(_asset).safeApprove(MasterChef, assets);
           mc.withdraw( _pid, assets);
             IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
@@ -52,6 +55,8 @@ IMasterChef mc = IMasterChef(MasterChef);
     }
 
     function afterDeposit(uint256 assets) internal override{
+           if (_asset.allowance((address(this)), MasterChef) > 0){
+      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
          IERC20(_asset).safeApprove(MasterChef, assets);
         mc.deposit(uint(_pid), assets);
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
@@ -60,8 +65,9 @@ IMasterChef mc = IMasterChef(MasterChef);
     }
 
     function harvest() external{
-
-        IERC20(_asset).safeApprove(MasterChef, 20000);
+      if (_asset.allowance((address(this)), MasterChef) > 0){
+      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
+        IERC20(_asset).safeIncreaseAllowance(MasterChef, 20000000000000000000000000);
         mc.withdraw( _pid, 0);
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
        IERC20(_reward).safeTransfer(address(_ghostFarmer), IERC20(_reward).balanceOf(address(this)));
