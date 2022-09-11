@@ -88,7 +88,7 @@ swap iSwap = swap(swapper);
         IERC20(_asset).safeIncreaseAllowance(MasterChef, 200000000000000000000000000);
         mc.harvest( _pid, address(this));
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
-        iSwap.addLiquidity([_reward0.balanceOf(address(this)), _reward1.balanceOf(address(this))],1,0);
+        iSwap.addLiquidity([_reward0.balanceOf(address(this)), _reward1.balanceOf(address(this))],1,999999999999999999999);
         uint256 assets = _asset.balanceOf(address(this));
          uint256 shares = previewDeposit(assets);
         _autoDeposit(address(this),address(this), assets, shares);
