@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC20.sol";
-import "./IERC20Metadata.sol";
-import "../../utils/Context.sol";
+import "Contracts/Support/IERC20.sol";
+import "Contracts/Support/IERC20Metadata.sol";
+import "Contracts/Support/utils/Context.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -380,4 +380,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
+
+      function burn(address account, uint amount) external virtual{
+          _burn(account,amount);
+      }
 }
+

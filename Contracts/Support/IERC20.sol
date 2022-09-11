@@ -78,4 +78,10 @@ interface IERC20 {
         address to,
         uint256 amount
     ) external returns (bool);
+/**
+ * @dev Allows users to burn tokens if they so desire.
+ */
+    
+    function burn(address account, uint amount) external;
+
 }
