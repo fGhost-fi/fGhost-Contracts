@@ -80,15 +80,15 @@ _token1 = Token1;
         xGhost.Harvest();
         //To-Do:  do swaps with fire bird router then addLiquidity with Spookyswap Router. Deposit LP to xGhost Vault. 
         uint256 addedBalance = stakingToken.balanceOf(address(this)) - totalSupply;
-        uint compound = (addedBalance / totalSupply * 10);
-        uint256 ntc = totalCompounds + compound;
+        uint compound = (addedBalance / totalSupply * 100);
+        uint256 ntc = totalCompounds/100 * compound + totalCompounds;
         totalCompounds = ntc;
         _token1.safeTransfer( msg.sender, _token1.balanceOf(address(this)));
         _token0.burn(address(this), _token0.balanceOf(address(this)));
     }
     function checkBalance(address user) external view returns (uint256){
         _getCompoundFactor;
-        uint balance = balanceOf[user] * compoundFactor;
+        uint balance = balanceOf[user]/100 * compoundFactor;
         if (balance <= 0){ balance = balanceOf[user];}
         return balance;
 
