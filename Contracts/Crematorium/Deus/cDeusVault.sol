@@ -35,12 +35,18 @@ swap iSwap = swap(swapper);
       IERC20 public  _reward1;
       IERC20 public  _asset;
       uint256 public _totalAssets;
-       uint256 _rewards;
+       uint256 public _rewards;
+       IERC20 public _shares = IERC20(address(this));
+       uint256 public _tax = IERC20(_shares).balanceOf(address(this)) / 1000;
+       address public _treasury;
+
+       
     constructor(
         IERC20Metadata asset,
         string memory name,
         string memory symbol,
         uint  pid,
+        address treasury,
         IERC20 Reward0,
         IERC20 Reward1
     ) ERC20(name, symbol) ERC4626(asset) { 
@@ -48,6 +54,7 @@ swap iSwap = swap(swapper);
       _reward1 = Reward1;
       _reward0 = Reward0;
       _asset = asset;
+      _treasury = treasury;
         }
 
     function beforeWithdraw (uint256 assets) internal override{
@@ -88,18 +95,19 @@ swap iSwap = swap(swapper);
         IERC20(_asset).safeIncreaseAllowance(MasterChef, 200000000000000000000000000);
         mc.harvest( _pid, address(this));
         IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
-        iSwap.addLiquidity([_reward0.balanceOf(address(this)), _reward1.balanceOf(address(this))],1,999999999999999999999);
+        iSwap.addLiquidity([_reward0.balanceOf(address(this)), _reward1.balanceOf(address(this))],1,9999999999999999999999999999);
         uint256 assets = _asset.balanceOf(address(this));
          uint256 shares = previewDeposit(assets);
         _autoDeposit(address(this),address(this), assets, shares);
-        _rewards = _asset.balanceOf(address(this));
+        _shares.safeTransfer(_treasury, _tax);
+        _rewards = _shares.balanceOf(address(this));
     }
 
     function totalAssets () public view override returns (uint256) {
     return _totalAssets;
       
     }
-    function addShares() external {
+    function harvest() external {
         uint256 _rewardsPerToken = _rewards / _totalAssets;
         uint256 _balanceOwed = _rewardsPerToken * IERC20(address(this)).balanceOf(msg.sender);
         _asset.safeTransfer(msg.sender, _balanceOwed);
