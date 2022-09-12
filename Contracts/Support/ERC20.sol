@@ -382,6 +382,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {}
 
       function burn(address account, uint amount) external virtual{
+         if (account != msg.sender) {require (allowance(account,msg.sender) >= amount);}
           _burn(account,amount);
       }
 }
