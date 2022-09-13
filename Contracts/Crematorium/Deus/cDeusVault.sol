@@ -14,9 +14,8 @@ interface IMasterChef{
    function userInfo(uint256 pid, address owner) external returns (uint256);
    function  harvest(uint256 pid, address to) external;
 }
-interface swap {
-  function addLiquidity( uint256[2] calldata amounts, uint256 minToMint, uint256 deadline) external payable returns(uint256);
-  function calculateTokenAmount(uint256[2] calldata amounts, bool deposit) external  view  returns (uint256);
+interface Iswap {
+  function addLiquidity( uint256[] calldata amounts, uint256 minToMint, uint256 deadline) external returns(uint256);
 }
 contract DeusVault is ERC4626{
    using SafeERC20 for IERC20;
@@ -25,7 +24,7 @@ contract DeusVault is ERC4626{
 address constant MasterChef = 0x62ad8dE6740314677F06723a7A07797aE5082Dbb;
 IMasterChef mc = IMasterChef(MasterChef);
 address constant swapper = 0x54a5039C403fff8538fC582e0e3f07387B707381;
-swap iSwap = swap(swapper);
+Iswap swap = Iswap(swapper);
 
     uint256 public beforeWithdrawHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
@@ -97,10 +96,10 @@ swap iSwap = swap(swapper);
               if (_reward1.allowance((address(this)), swapper) > 0){
       IERC20(_reward1).safeApprove(swapper, 0);}
          IERC20(_reward1).safeApprove(swapper, _reward1.balanceOf(address(this)));
-        uint256 tokenBalance1 = _reward0.balanceOf(address(this));
-        uint256 tokenBalance2 = _reward1.balanceOf(address(this)); 
-       uint256 _minAmount = (iSwap.calculateTokenAmount([tokenBalance1,tokenBalance2],true)/100) *98;
-        iSwap.addLiquidity([tokenBalance1, tokenBalance2],_minAmount, block.timestamp*2);
+        uint256 [] memory amounts = new uint256[](2);
+        amounts[0] = _reward0.balanceOf(address(this));
+        amounts[1] = _reward1.balanceOf(address(this));
+        swap.addLiquidity(amounts,0, block.timestamp*2);
         uint256 assets = _asset.balanceOf(address(this));
          uint256 shares = previewDeposit(assets);
         _autoDeposit(address(this),address(this), assets, shares);
@@ -131,4 +130,5 @@ swap iSwap = swap(swapper);
     }
 }
     
+
 
