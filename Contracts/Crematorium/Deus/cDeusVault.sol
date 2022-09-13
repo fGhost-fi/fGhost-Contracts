@@ -15,7 +15,8 @@ interface IMasterChef{
    function  harvest(uint256 pid, address to) external;
 }
 interface swap {
-  function addLiquidity(uint256[2] calldata amounts, uint256 minToMint, uint256 deadline) external payable;
+  function addLiquidity( uint256[2] calldata amounts, uint256 minToMint, uint256 deadline) external payable returns(uint256);
+  function calculateTokenAmount(uint256[2] calldata amounts, bool deposit) external  view  returns (uint256);
 }
 contract DeusVault is ERC4626{
    using SafeERC20 for IERC20;
@@ -55,20 +56,20 @@ swap iSwap = swap(swapper);
 
     function beforeWithdraw (uint256 assets) internal override{
           if (_asset.allowance((address(this)), MasterChef) > 0){
-      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
+      IERC20(_asset).safeApprove(MasterChef, 0);}
          IERC20(_asset).safeApprove(MasterChef, assets);
           mc.withdraw( _pid, assets, address(this));
-            IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+            IERC20(_asset).safeApprove(MasterChef, 0);
           _totalAssets = mc.userInfo(_pid, address(this));
          beforeWithdrawHookCalledCounter++;
     }
 
     function afterDeposit(uint256 assets) internal override{
            if (_asset.allowance((address(this)), MasterChef) > 0){
-      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
+      IERC20(_asset).safeApprove(MasterChef, 0);}
          IERC20(_asset).safeApprove(MasterChef, assets);
         mc.deposit(uint(_pid), assets, address(this));
-        IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
+        IERC20(_asset).safeApprove(MasterChef, 0);
         _totalAssets = mc.userInfo(_pid, address(this));
         afterDepositHookCalledCounter++;
     }
@@ -87,17 +88,29 @@ swap iSwap = swap(swapper);
     }
     function reinvest() external{
       if (_asset.allowance((address(this)), MasterChef) > 0){
-      IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);}
-        IERC20(_asset).safeIncreaseAllowance(MasterChef, 200000000000000000000000000);
+      IERC20(_asset).safeApprove(MasterChef, 0);}
+        IERC20(_asset).safeApprove(MasterChef, 900000000000000000000000000000);
         mc.harvest( _pid, address(this));
-        IERC20(_asset).safeDecreaseAllowance(MasterChef, 0);
-        iSwap.addLiquidity([_reward0.balanceOf(address(this)), _reward1.balanceOf(address(this))],1, block.timestamp*2);
+           if (_reward0.allowance((address(this)), swapper) > 0){
+      IERC20(_reward0).safeApprove(swapper, 0);}
+         IERC20(_reward0).safeApprove(swapper, _reward0.balanceOf(address(this)));
+              if (_reward1.allowance((address(this)), swapper) > 0){
+      IERC20(_reward1).safeApprove(swapper, 0);}
+         IERC20(_reward1).safeApprove(swapper, _reward1.balanceOf(address(this)));
+        uint256 tokenBalance1 = _reward0.balanceOf(address(this));
+        uint256 tokenBalance2 = _reward1.balanceOf(address(this)); 
+       uint256 _minAmount = (iSwap.calculateTokenAmount([tokenBalance1,tokenBalance2],true)/100) *98;
+        iSwap.addLiquidity([tokenBalance1, tokenBalance2],_minAmount, block.timestamp*2);
         uint256 assets = _asset.balanceOf(address(this));
          uint256 shares = previewDeposit(assets);
         _autoDeposit(address(this),address(this), assets, shares);
         _tax = _shares.balanceOf(address(this)) / 1000;
         _shares.safeTransfer(_treasury, _tax);
         _rewards = _shares.balanceOf(address(this));
+         _rewardsPerToken = _rewards / _totalAssets;
+            IERC20(_asset).safeApprove(MasterChef, 0);
+                IERC20(_reward0).safeApprove(swapper, 0);
+                  IERC20(_reward1).safeApprove(swapper, 0);
     }
 
     function totalAssets () public view override returns (uint256) {
@@ -108,11 +121,11 @@ swap iSwap = swap(swapper);
     function harvest() external {
       _rewardsPerToken = _rewards / _totalAssets;
     uint256 _balanceOwed = _rewardsPerToken * IERC20(address(this)).balanceOf(msg.sender);
-        _asset.safeTransfer(msg.sender, _balanceOwed);
+        _shares.safeTransfer(msg.sender, _balanceOwed);
     }
     
-    function pendingRewards(address user) external returns(uint256 pendingShares) {
-      _rewardsPerToken = _rewards / _totalAssets;
+    function pendingRewards(address user) external view returns(uint256 pendingShares) {
+     
        uint256 _balanceOwed = _rewardsPerToken * IERC20(address(this)).balanceOf(user);
         return _balanceOwed;
     }
