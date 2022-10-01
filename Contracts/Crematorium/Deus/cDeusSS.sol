@@ -110,7 +110,6 @@ function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view 
        if (_asset.allowance((address(this)), MasterChef) > 0){
       IERC20(_asset).safeApprove(MasterChef, 0);}
         IERC20(_asset).safeApprove(MasterChef, type(uint256).max);
-          if (_reward0.allowance((address(this)), swapper) > 0){
     }
 
     function totalAssets () public view override returns (uint256) {
