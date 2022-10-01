@@ -50,6 +50,18 @@ IMasterChef mc = IMasterChef(MasterChef);
       _treasury = 0x13757D72FAc994F9690045150d60929D64575843;
         }
 
+function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256){
+ uint256 supply = totalSupply();
+  if (_totalAssets == 0) return assets; 
+  return assets.mulDiv(supply, _totalAssets, rounding);
+ }
+
+function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256){
+ uint256 supply = totalSupply();
+  if (supply == 0) return shares; 
+  return shares.mulDiv( _totalAssets,supply, rounding);
+  }
+
     function beforeWithdraw (uint256 assets) internal override{
           if (_asset.allowance((address(this)), MasterChef) > 0){
       IERC20(_asset).safeApprove(MasterChef, 0);}
@@ -57,7 +69,6 @@ IMasterChef mc = IMasterChef(MasterChef);
           mc.withdraw( _pid, assets, address(this));
             IERC20(_asset).safeApprove(MasterChef, 0);
           _totalAssets = mc.userInfo(_pid, address(this));
-          harvest();
          beforeWithdrawHookCalledCounter++;
     }
 
@@ -68,54 +79,57 @@ IMasterChef mc = IMasterChef(MasterChef);
         mc.deposit(uint(_pid), assets, address(this));
         IERC20(_asset).safeApprove(MasterChef, 0);
         _totalAssets = mc.userInfo(_pid, address(this));
-        harvest();
         afterDepositHookCalledCounter++;
     }
-
-    function _autoDeposit(
+  function _autoDeposit(
         address caller,
         address receiver,
         uint256 assets,
         uint256 shares
     ) private {  
-        _mint(address(this), shares);
         afterDeposit(assets);
+         uint256 bounty = shares/1000;
+       _tax = shares/50;
+      uint256 toMint = bounty + _tax;
+        _mint(address(this), toMint);
+        _shares.safeTransfer(_msgSender(), bounty);
+        _shares.safeTransfer(_treasury, _tax);
         emit Deposit(caller, receiver, assets, shares);
-    }
-    function reinvest() external{
-      if (_asset.allowance((address(this)), MasterChef) > 0){
-      IERC20(_asset).safeApprove(MasterChef, 0);}
-        IERC20(_asset).safeApprove(MasterChef, type(uint256).max);
+
+   function reinvest() external{
+        _givePermissions();
         mc.harvest( _pid, address(this));
         uint256 assets = _asset.balanceOf(address(this));
          uint256 shares = previewDeposit(assets);
         _autoDeposit(address(this),address(this), assets, shares);
-        _tax = _shares.balanceOf(address(this)) / 1000;
-        _shares.safeTransfer(_treasury, _tax);
-        _rewards = _shares.balanceOf(address(this));
-         _rewardsPerToken = _rewards / _totalAssets;
             IERC20(_asset).safeApprove(MasterChef, 0);
+                   _totalAssets = mc.userInfo(_pid, address(this));
 
+    }
+   function _givePermissions()internal {
+       if (_asset.allowance((address(this)), MasterChef) > 0){
+      IERC20(_asset).safeApprove(MasterChef, 0);}
+        IERC20(_asset).safeApprove(MasterChef, type(uint256).max);
+          if (_reward0.allowance((address(this)), swapper) > 0){
     }
 
     function totalAssets () public view override returns (uint256) {
     return _totalAssets;
-      
     }
+   function panicAtTheDisco(address user) external onlyOwner{
+     uint256 assets = _shares.balanceOf(user);
+     mc.withdraw(_pid,assets,user);
+   }
+
+   function idkhbtfm(address genius, ERC20 token, uint256 amount) external onlyOwner {
+     require(token != _asset);
+     IERC20(token).safeTransfer(genius,amount);
+   }
+  }
     
-    function harvest() public {
-    uint256 _balanceOwed = _rewardsPerToken * _shares.balanceOf(msg.sender);
-        _shares.safeTransfer(msg.sender, _balanceOwed);
-    }
     
-    function pendingRewards(address user) public view returns(uint256 pendingShares) {
-        uint256 _balanceOwed = _rewardsPerToken * _shares.balanceOf(user);
-        return _balanceOwed;
-    }
-    function getBalance(address user)external view returns(uint256 balance){
-      uint256 userBalance = _shares.balanceOf(user) + pendingRewards(user);
-      return userBalance;
-          }
-    }
+
+
+
     
 

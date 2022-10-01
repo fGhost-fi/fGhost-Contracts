@@ -104,11 +104,11 @@ function afterDeposit(uint256 assets) internal virtual {}
 
     /** @dev See {IERC4262-withdraw} */
     function withdraw(
-        uint256 assets,
+        uint256 shares,
         address owner
     ) public virtual override returns (uint256) {
-        require(assets <= maxWithdraw(owner), "ERC4626: withdraw more than max");
-        uint256 shares = previewWithdraw(assets);
+        require(shares <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+        uint256 assets = previewWithdraw(shares);
         _withdraw(address(this), _msgSender(), owner, assets, shares);
         return shares;
     }
