@@ -110,9 +110,9 @@ function afterDeposit(uint256 assets) internal virtual {}
         require(shares <= maxWithdraw(owner), "ERC4626: withdraw more than max");
         uint256 assets = previewWithdraw(shares);
         _withdraw(address(this), _msgSender(), owner, assets, shares);
-        return shares;
+        return shares; 
     }
-
+ 
     /** @dev See {IERC4262-redeem} */
     function redeem(
         uint256 shares,
@@ -159,7 +159,7 @@ function afterDeposit(uint256 assets) internal virtual {}
         address receiver,
         uint256 assets,
         uint256 shares
-    ) private {
+    ) internal virtual {
         // If _asset is ERC777, `transferFrom` can trigger a reenterancy BEFORE the transfer happens through the
         // `tokensToSend` hook. On the other hand, the `tokenReceived` hook, that is triggered after the transfer,
         // calls the vault, which is assumed not malicious.
@@ -182,7 +182,7 @@ function afterDeposit(uint256 assets) internal virtual {}
         address owner,
         uint256 assets,
         uint256 shares
-    ) private {
+    ) internal {
         if (caller != owner) {
             _spendAllowance(owner, caller, shares);
         }
