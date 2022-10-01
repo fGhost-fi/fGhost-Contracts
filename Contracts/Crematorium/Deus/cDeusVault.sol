@@ -7,6 +7,7 @@ import "Contracts/Support/IERC20Metadata.sol";
 import "../../Support/SafeERC20.sol";
 import "../../Support/Math/SafeMath.sol";
 import "../../Support/utils/Ownable.sol"; 
+import "../../Support/Math/Math.sol";
 
 interface IMasterChef{
     
@@ -22,7 +23,7 @@ interface Iswap {
 }
 contract DeusVault is ERC4626, Ownable{
    using SafeERC20 for IERC20;
-   using SafeMath for uint; 
+   using Math for uint; 
     
 address constant MasterChef = 0x62ad8dE6740314677F06723a7A07797aE5082Dbb;
 IMasterChef mc = IMasterChef(MasterChef);
@@ -77,6 +78,28 @@ Iswap swap = Iswap(swapper);
         lastDeposit[_msgSender()] = block.timestamp;
         afterDepositHookCalledCounter++;
     }
+ function _convertToShares(uint256 assets, Math.Rounding rounding) internal view override returns (uint256){
+ uint256 supply = totalSupply();
+  if (_totalAssets == 0) return assets; 
+  return assets.mulDiv(supply, _totalAssets, rounding);
+ }
+
+function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256){
+ uint256 supply = totalSupply();
+  if (supply == 0) return shares; 
+  return shares.mulDiv( _totalAssets,supply, rounding);
+  }
+ 
+   function withdraw(
+        uint256 shares,
+        address owner
+    ) public override returns (uint256) {
+        require(shares <= maxWithdraw(owner), "ERC4626: withdraw more than max");
+        uint256 sharePerToken = _totalAssets*100/ totalSupply();
+        uint256 assets = sharePerToken * shares/100;
+        _withdraw(address(this), _msgSender(), owner, assets, shares);
+        return shares;
+    } 
 
     function _autoDeposit(
         address caller,
@@ -137,5 +160,6 @@ Iswap swap = Iswap(swapper);
      IERC20(token).safeTransfer(genius,amount);
    }
   }
+    
     
 
