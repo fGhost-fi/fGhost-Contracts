@@ -9,6 +9,11 @@ import "../Support/Math/SafeMath.sol";
 import "../Support/utils/Ownable.sol";
 import "../fSpirit/fSpirit.sol";
 
+interface Strategy{
+    function deposit(uint256 amount) external returns(uint256 Deposited);
+    function checkPrice() external returns (uint256 price);
+}
+
 //fSPIRIT is a little more than an inSPIRIT wrapper.
 contract fSpiritMaster is Ownable {
 using SafeMath for uint;
@@ -51,15 +56,23 @@ address _rewardToken){
     _acceptedTokens = acceptedTokens;
     _strategy = strategy;
 }
+
+function _getPrice(uint256 tokenID) internal returns (uint256 price) {
+ Strategy strategy_ = Strategy(_strategy[tokenID]);
+ return strategy_.checkPrice();
+}
 //Deposit acceptable winSpirit tokens and redeem them for fSpirit
 function redeem(uint256 tokenID, uint amount) public{
  require (amount > 0,"invalid input");
  require ( amount <= IERC20(_acceptedTokens[tokenID]).balanceOf(msg.sender),"Amount exceeds balance");
  IERC20(_acceptedTokens[tokenID]).safeTransferFrom(msg.sender, _strategy[tokenID], amount);
- _fSpirit.mint(msg.sender, amount);
+ Strategy strategy_ = Strategy(_strategy[tokenID]);
+ uint256 price = _getPrice(tokenID);
+ strategy_.deposit(amount);
+ _fSpirit.mint(msg.sender, price);
 
 }
-//Add new Accepted Tokens
+
 function addAcceptedToken(address token, address strat) external onlyOwner {
  require (token != address(0), "0 address");
  require (strat != address(0), "0 address");
@@ -154,7 +167,6 @@ _strategy.push(strat);
     }
 
 }
-
 
 
 

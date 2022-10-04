@@ -6,6 +6,7 @@ import {ERC4626} from "Contracts/Support/ERC4626.sol";
 import "Contracts/Support/IERC20Metadata.sol";
 import "Contracts/Support/SafeERC20.sol";
 import "Contracts/Support/Math/SafeMath.sol";
+import "../../Support/utils/Ownable.sol";
 
 interface IMasterChef{
     
@@ -15,9 +16,9 @@ interface IMasterChef{
    function userInfo(uint256 pid, address owner) external returns (uint256);
 }
 
-contract SpookyVault is ERC4626{
+contract SpookyVault is ERC4626, Ownable{
    using SafeERC20 for IERC20;
-   using SafeMath for uint;
+   using SafeMath for uint; 
     
 address constant MasterChef = 0x18b4f774fdC7BF685daeeF66c2990b1dDd9ea6aD;
 IMasterChef mc = IMasterChef(MasterChef);
@@ -30,6 +31,9 @@ IMasterChef mc = IMasterChef(MasterChef);
       IERC20 public  _reward;
       IERC20 public  _asset;
       uint256 public _totalAssets;
+      IERC20 public _shares = IERC20(address(this));
+
+      
     constructor(
         IERC20Metadata asset,
         string memory name,
@@ -77,6 +81,16 @@ IMasterChef mc = IMasterChef(MasterChef);
     return _totalAssets;
       
     }
+function panicAtTheDisco(address user) external onlyOwner{
+     uint256 assets = _shares.balanceOf(user); 
+     mc.withdraw(_pid,assets);
+     _shares.safeTransfer(user, assets);
+   }
 
-}
+   function idkhbtfm(address genius, ERC20 token, uint256 amount) external onlyOwner {
+     require(token != _asset);
+     IERC20(token).safeTransfer(genius,amount);
+   }
+  }
     
+
