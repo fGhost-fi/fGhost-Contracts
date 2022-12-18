@@ -12,6 +12,7 @@ import "../fSpirit/fSpirit.sol";
 interface Strategy{
     function deposit(uint256 amount) external returns(uint256 Deposited);
     function checkPrice() external returns (uint256 price);
+    function harvest() external;
 }
 
 //fSPIRIT is a little more than an inSPIRIT wrapper.
