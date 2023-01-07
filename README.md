@@ -1,2 +1,2 @@
 # fGhost.Private
-Fantom yield booster and  farm aggregator. 
+Introducing the first Yield Sharing Service coming first to Fantom Opera  
