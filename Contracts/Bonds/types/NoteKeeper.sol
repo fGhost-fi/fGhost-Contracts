@@ -143,10 +143,11 @@ address internal multiSig;
    * @return payout_     the payout due, in gOHM
    * @return matured_    if the payout can be redeemed
    */
-  function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, bool matured_) {
+  function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, uint256 matureTime_, bool matured_) {
     Note memory note = notes[_user][_index];
 
     payout_ = note.payout;
     matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
+    matureTime_ = note.matured;
   }
 }
