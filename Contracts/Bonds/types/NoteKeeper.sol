@@ -151,5 +151,6 @@ address internal multiSig;
     payout_ = note.payout;
      matureTime_ = note.matured;
     matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
+    matureTime_ = note.matured;
   }
 }
