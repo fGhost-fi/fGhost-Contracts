@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.10;
- 
+
 import "../types/FrontEndRewarder.sol";
-import "./INoteKeeper.sol"; 
+import "./INoteKeeper.sol";
 
 abstract contract NoteKeeper is INoteKeeper, FrontEndRewarder {
 
   mapping(address => Note[]) public notes; // user deposit data
   mapping(address => mapping(uint256 => address)) private noteTransfers; // change note ownership
-
+uint48 private marketID;
+uint256 private matureTime;
 address internal multiSig;
 
   constructor (
@@ -23,7 +24,7 @@ address internal multiSig;
   /**
    * @notice             adds a new Note for a user, stores the front end & DAO rewards, and mints & stakes payout & rewards
    * @param _user        the user that owns the Note
-   * @param _payout      the amount of OHM due to the user
+   * @param _payout      the amount of FGHST due to the user
    * @param _expiry      the timestamp when the Note is redeemable
    * @param _marketID    the ID of the market deposited into
    * @return index_      the index of the Note in the user's array
@@ -64,8 +65,9 @@ address internal multiSig;
     uint48 time = uint48(block.timestamp);
 
     for (uint256 i = 0; i < _indexes.length; i++) {
-      (uint256 pay, bool matured) = pendingFor(_user, _indexes[i]);
-
+      (uint256 pay, bool matured, uint48 _marketID, uint256 matureTime_) = pendingFor(_user, _indexes[i]);
+        marketID = _marketID;
+        matureTime = matureTime_;
       if (matured) {
         notes[_user][_indexes[i]].redeemed = time; // mark as redeemed
         payout_ += pay;
@@ -140,13 +142,14 @@ address internal multiSig;
    * @notice             calculate amount available for claim for a single note
    * @param _user        the user that the note belongs to
    * @param _index       the index of the note in the user's array
-   * @return payout_     the payout due, in gOHM
+   * @return payout_     the payout due, in FGHST
    * @return matured_    if the payout can be redeemed
    */
-  function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, bool matured_) {
+  function pendingFor(address _user, uint256 _index) public view override returns (uint256 payout_, bool matured_, uint48 _marketID, uint256 matureTime_) {
     Note memory note = notes[_user][_index];
-
+    _marketID = note.marketID;
     payout_ = note.payout;
+     matureTime_ = note.matured;
     matured_ = note.redeemed == 0 && note.matured <= block.timestamp && note.payout != 0;
   }
 }

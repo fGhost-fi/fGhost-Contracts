@@ -88,7 +88,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * where
      * payout = FGHST out
      * amount = quote tokens in
-     * price = quote tokens : ohm (i.e. 42069 DAI : OHM)
+     * price = quote tokens : ohm (i.e. 42069 DAI : FGHST)
      *
      * 1e18 = OHM decimals (9) + price decimals (9)
      */
@@ -101,7 +101,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     /*
      * each market is initialized with a capacity
      *
-     * this is either the number of OHM that the market can sell
+     * this is either the number of FGHST that the market can sell
      * (if capacity in quote is false), 
      *
      * or the number of quote tokens that the market can buy
@@ -240,7 +240,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
        * will be max size in the desired deposit interval for the remaining time
        *
        * i.e. market has 10 days remaining. deposit interval is 1 day. capacity
-       * is 10,000 OHM. max payout would be 1,000 OHM (10,000 * 1 / 10).
+       * is 10,000 fghst. max payout would be 1,000 fghst (10,000 * 1 / 10).
        */  
       markets[_id].maxPayout = uint64(capacity * meta.depositInterval / timeRemaining);
 
@@ -295,7 +295,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * that will decay over in the length of the program if price remains the same).
      * it is converted into base token terms if passed in in quote token terms.
      *
-     * 1e18 = ohm decimals (9) + initial price decimals (9)
+     * 1e18 = fghst decimals (9) + initial price decimals (9)
      */
     uint64 targetDebt = uint64(_booleans[0]
       ? (_market[0] * 1e18 / _market[1]) / 10 ** decimals
@@ -418,7 +418,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @param _id          ID of market
    * @return             amount of FGHST to be paid in FGHST decimals
    *
-   * @dev 1e18 = ohm decimals (9) + market price decimals (9)
+   * @dev 1e18 = fghst decimals (9) + market price decimals (9)
    */
   function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
     Metadata memory meta = metadata[_id];
@@ -469,7 +469,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @notice             up to date control variable
    * @dev                accounts for control variable adjustment
    * @param _id          ID of market
-   * @return             control variable for market in OHM decimals
+   * @return             control variable for market in FGHST decimals
    */
   function currentControlVariable(uint256 _id) public view returns (uint256) {
     (uint64 decay,,) = _controlDecay(_id);

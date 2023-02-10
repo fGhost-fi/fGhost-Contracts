@@ -17,5 +17,5 @@ interface INoteKeeper {
   function pullNote(address from, uint256 index) external returns (uint256 newIndex_);
 
   function indexesFor(address _user) external view returns (uint256[] memory);
-  function pendingFor(address _user, uint256 _index) external view returns (uint256 payout_, bool matured_);
+  function pendingFor(address _user, uint256 _index) external view returns (uint256 payout_, bool matured_, uint48 _marketID, uint256 matureTime_);
 }
