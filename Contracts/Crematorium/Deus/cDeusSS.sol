@@ -95,6 +95,7 @@ function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view 
         _shares.safeTransfer(_msgSender(), bounty);
         _shares.safeTransfer(_treasury, _tax);
         emit Deposit(caller, receiver, assets, shares);
+    }
 
    function reinvest() external{
         _givePermissions();
