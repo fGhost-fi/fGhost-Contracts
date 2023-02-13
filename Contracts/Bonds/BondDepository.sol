@@ -22,7 +22,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
   event CreateMarket(uint256 indexed id, address indexed baseToken, address indexed quoteToken, uint256 initialPrice);
   event CloseMarket(uint256 indexed id);
   event Bond(uint256 indexed id, uint256 amount, uint256 price);
-  event Tuned(uint256 indexed id, uint64 oldControlVariable, uint64 newControlVariable);
+  event Tuned(uint256 indexed id, uint256 oldControlVariable, uint256 newControlVariable);
 
 /* ======== STATE VARIABLES ======== */
 
@@ -90,9 +90,9 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * amount = quote tokens in
      * price = quote tokens : ohm (i.e. 42069 DAI : FGHST)
      *
-     * 1e18 = OHM decimals (9) + price decimals (9)
+     * 1e27 = OHM decimals (18) + price decimals (9)
      */
-    payout_ = (_amount * 1e18 / price) / (10 ** metadata[_id].quoteDecimals);
+    payout_ = (_amount * 1e27 / price) / (10 ** metadata[_id].quoteDecimals);
 
     // markets have a max payout amount, capping size because deposits
     // do not experience slippage. max payout is recalculated upon tuning
@@ -133,10 +133,10 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     // markets keep track of how many quote tokens have been
     // purchased, and how much OHM has been sold
     market.purchased += _amount;
-    market.sold += uint64(payout_);
+    market.sold += uint256(payout_);
 
     // incrementing total debt raises the price of the next bond
-    market.totalDebt += uint64(payout_);
+    market.totalDebt += uint256(payout_);
 
     emit Bond(_id, _amount, price);
 
@@ -201,7 +201,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     if (adjustments[_id].active) {
       Adjustment storage adjustment = adjustments[_id];
 
-      (uint64 adjustBy, uint48 secondsSince, bool stillActive) = _controlDecay(_id);
+      (uint256 adjustBy, uint48 secondsSince, bool stillActive) = _controlDecay(_id);
       terms[_id].controlVariable -= adjustBy;
 
       if (stillActive) {
@@ -230,9 +230,9 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
       uint256 price = _marketPrice(_id);
 
       // standardize capacity into an base token amount
-      // ohm decimals (9) + price decimals (9)
+      // ohm decimals (18) + price decimals (9)
       uint256 capacity = market.capacityInQuote
-        ? (market.capacity * 1e18 / price) / (10 ** meta.quoteDecimals)
+        ? (market.capacity * 1e27 / price) / (10 ** meta.quoteDecimals)
         : market.capacity;
 
       /**
@@ -242,13 +242,13 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
        * i.e. market has 10 days remaining. deposit interval is 1 day. capacity
        * is 10,000 fghst. max payout would be 1,000 fghst (10,000 * 1 / 10).
        */  
-      markets[_id].maxPayout = uint64(capacity * meta.depositInterval / timeRemaining);
+      markets[_id].maxPayout = uint256(capacity * meta.depositInterval / timeRemaining);
 
       // calculate the ideal total debt to satisfy capacity in the remaining time
       uint256 targetDebt = capacity * meta.length / timeRemaining;
 
       // derive a new control variable from the target debt and current supply
-      uint64 newControlVariable = uint64(price * fghst.balanceOf(address(this)) / targetDebt);
+      uint256 newControlVariable = uint256(price * fghst.balanceOf(address(this)) / targetDebt);
 
       emit Tuned(_id, terms[_id].controlVariable, newControlVariable);
 
@@ -257,7 +257,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
       } else {
         // if decrease, control variable change will be carried out over the tune interval
         // this is because price will be lowered
-        uint64 change = terms[_id].controlVariable - newControlVariable;
+        uint256 change = terms[_id].controlVariable - newControlVariable;
         adjustments[_id] = Adjustment(change, _time, meta.tuneInterval, true);
       }
       metadata[_id].lastTune = _time;
@@ -295,10 +295,10 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * that will decay over in the length of the program if price remains the same).
      * it is converted into base token terms if passed in in quote token terms.
      *
-     * 1e18 = fghst decimals (9) + initial price decimals (9)
+     * 1e27 = fghst decimals (18) + initial price decimals (9)
      */
-    uint64 targetDebt = uint64(_booleans[0]
-      ? (_market[0] * 1e18 / _market[1]) / 10 ** decimals
+    uint256 targetDebt = uint256(_booleans[0]
+      ? (_market[0] * 1e27 / _market[1]) / 10 ** decimals
       : _market[0]
     );
 
@@ -307,7 +307,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * interval. for example, if capacity is 1,000 FGHST, there are 10 days to conclusion, 
      * and the preferred deposit interval is 1 day, max payout would be 100 FGHST.
      */
-    uint64 maxPayout = uint64(targetDebt * _intervals[0] / secondsToConclusion);
+    uint256 maxPayout = uint256(targetDebt * _intervals[0] / secondsToConclusion);
 
     /*
      * max debt serves as a circuit breaker for the market. let's say the quote
@@ -345,10 +345,10 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
 
     terms.push(Terms({
       fixedTerm: _booleans[1], 
-      controlVariable: uint64(controlVariable),
+      controlVariable: uint256(controlVariable),
       vesting: uint48(_terms[0]), 
       conclusion: uint48(_terms[1]), 
-      maxDebt: uint64(maxDebt) 
+      maxDebt: uint256(maxDebt) 
     }));
 
     metadata.push(Metadata({
@@ -418,13 +418,13 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @param _id          ID of market
    * @return             amount of FGHST to be paid in FGHST decimals
    *
-   * @dev 1e18 = fghst decimals (9) + market price decimals (9)
+   * @dev 1e27 = fghst decimals (18) + market price decimals (9)
    */
   function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
     Metadata memory meta = metadata[_id];
     return 
       _amount
-      * 1e18 
+      * 1e27 
       / marketPrice(_id)
       / 10 ** meta.quoteDecimals;
   }
@@ -457,12 +457,12 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @param _id          ID of market
    * @return             amount of debt to decay
    */
-  function debtDecay(uint256 _id) public view override returns (uint64) {
+  function debtDecay(uint256 _id) public view override returns (uint256) {
     Metadata memory meta = metadata[_id];
 
     uint256 secondsSince = block.timestamp - meta.lastDecay;
 
-    return uint64(markets[_id].totalDebt * secondsSince / meta.length);
+    return uint256(markets[_id].totalDebt * secondsSince / meta.length);
   }
 
   /**
@@ -472,7 +472,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @return             control variable for market in FGHST decimals
    */
   function currentControlVariable(uint256 _id) public view returns (uint256) {
-    (uint64 decay,,) = _controlDecay(_id);
+    (uint256 decay,,) = _controlDecay(_id);
     return terms[_id].controlVariable - decay;
   }
 
@@ -564,7 +564,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @return secondsSince_    seconds since last change in control variable
    * @return active_          whether or not change remains active
    */ 
-  function _controlDecay(uint256 _id) internal view returns (uint64 decay_, uint48 secondsSince_, bool active_) {
+  function _controlDecay(uint256 _id) internal view returns (uint256 decay_, uint48 secondsSince_, bool active_) {
     Adjustment memory info = adjustments[_id];
     if (!info.active) return (0, 0, false);
 
