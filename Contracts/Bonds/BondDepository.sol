@@ -2,10 +2,8 @@
 pragma solidity ^0.8.10;
 
 import "./types/NoteKeeper.sol";
-
 import "../Support/SafeERC20.sol";
-
-import "../Support/IERC20Metadata.sol"; 
+import "../Support/IERC20Metadata.sol";
 import "./interfaces/IBondDepository.sol";
 
 /// @title fGhost Bond Depository
@@ -88,11 +86,11 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * where
      * payout = FGHST out
      * amount = quote tokens in
-     * price = quote tokens : ohm (i.e. 42069 DAI : FGHST)
+     * price = quote tokens : ohm (i.e. 42069 DAI : OHM)
      *
      * 1e18 = OHM decimals (9) + price decimals (9)
      */
-    payout_ = (_amount * 1e18 / price) / (10 ** metadata[_id].quoteDecimals);
+    payout_ = (_amount * 1e18 / price);
 
     // markets have a max payout amount, capping size because deposits
     // do not experience slippage. max payout is recalculated upon tuning
@@ -101,7 +99,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     /*
      * each market is initialized with a capacity
      *
-     * this is either the number of FGHST that the market can sell
+     * this is either the number of OHM that the market can sell
      * (if capacity in quote is false), 
      *
      * or the number of quote tokens that the market can buy
@@ -134,9 +132,9 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     // purchased, and how much OHM has been sold
     market.purchased += _amount;
     market.sold += uint64(payout_);
-
+ 
     // incrementing total debt raises the price of the next bond
-    market.totalDebt += uint64(payout_);
+    market.totalDebt += uint256(payout_);
 
     emit Bond(_id, _amount, price);
 
@@ -154,7 +152,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
     );
 
     // transfer payment to treasury
-    market.quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
+    market.quoteToken.safeTransferFrom(msg.sender, multiSig, _amount);
  
     // if max debt is breached, the market is closed 
     // this a circuit breaker
@@ -232,7 +230,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
       // standardize capacity into an base token amount
       // ohm decimals (9) + price decimals (9)
       uint256 capacity = market.capacityInQuote
-        ? (market.capacity * 1e18 / price) / (10 ** meta.quoteDecimals)
+        ? (market.capacity * 1e18 / price)
         : market.capacity;
 
       /**
@@ -240,7 +238,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
        * will be max size in the desired deposit interval for the remaining time
        *
        * i.e. market has 10 days remaining. deposit interval is 1 day. capacity
-       * is 10,000 fghst. max payout would be 1,000 fghst (10,000 * 1 / 10).
+       * is 10,000 OHM. max payout would be 1,000 OHM (10,000 * 1 / 10).
        */  
       markets[_id].maxPayout = uint64(capacity * meta.depositInterval / timeRemaining);
 
@@ -295,10 +293,10 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * that will decay over in the length of the program if price remains the same).
      * it is converted into base token terms if passed in in quote token terms.
      *
-     * 1e18 = fghst decimals (9) + initial price decimals (9)
+     * 1e27 = FGHST decimals (18) + initial price decimals (9)
      */
-    uint64 targetDebt = uint64(_booleans[0]
-      ? (_market[0] * 1e18 / _market[1]) / 10 ** decimals
+    uint256 targetDebt = uint64(_booleans[0]
+      ? (_market[0] * 1e27 / _market[1])/ 10 ** decimals   
       : _market[0]
     );
 
@@ -306,8 +304,8 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
      * max payout is the amount of capacity that should be utilized in a deposit
      * interval. for example, if capacity is 1,000 FGHST, there are 10 days to conclusion, 
      * and the preferred deposit interval is 1 day, max payout would be 100 FGHST.
-     */
-    uint64 maxPayout = uint64(targetDebt * _intervals[0] / secondsToConclusion);
+     */ 
+    uint256 maxPayout = uint256(targetDebt * _intervals[0] / secondsToConclusion);
 
     /*
      * max debt serves as a circuit breaker for the market. let's say the quote
@@ -418,15 +416,13 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @param _id          ID of market
    * @return             amount of FGHST to be paid in FGHST decimals
    *
-   * @dev 1e18 = fghst decimals (9) + market price decimals (9)
+   * @dev 1e27 = FGHST decimals (18) + market price decimals (9)
    */
   function payoutFor(uint256 _amount, uint256 _id) external view override returns (uint256) {
-    Metadata memory meta = metadata[_id];
     return 
       _amount
-      * 1e18 
-      / marketPrice(_id)
-      / 10 ** meta.quoteDecimals;
+      * 1e27 
+      / marketPrice(_id);
   }
 
   /**
@@ -469,7 +465,7 @@ contract fGhostBondDepository is IBondDepository, NoteKeeper {
    * @notice             up to date control variable
    * @dev                accounts for control variable adjustment
    * @param _id          ID of market
-   * @return             control variable for market in FGHST decimals
+   * @return             control variable for market in OHM decimals
    */
   function currentControlVariable(uint256 _id) public view returns (uint256) {
     (uint64 decay,,) = _controlDecay(_id);
