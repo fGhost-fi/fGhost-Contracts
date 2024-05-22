@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "Contracts/Support/IERC20.sol";
 import "Contracts/Support/SafeERC20.sol";
 import "Contracts/Support/Math/SafeMath.sol";
 import "Contracts/Support/utils/Ownable.sol";
-import "./Fghost.sol"; 
+import "./Fghost.sol";
+import "./IStrategy.sol"; 
 
 // The fGhost's GhostChef is a fork of 0xDao Garden by 0xDaov1
 // The biggest change made from SushiSwap is using per second instead of per block for rewards
@@ -17,7 +18,7 @@ import "./Fghost.sol";
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. 
-contract MasterChef is Ownable {
+contract GhostChef is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -44,6 +45,7 @@ contract MasterChef is Ownable {
         uint256 allocPoint;       // How many allocation points assigned to this pool. FGHSTs to distribute per block.
         uint256 lastRewardTime;  // Last block time that FGHSTs distribution occurs.
         uint256 accFGHSTPerShare; // Accumulated OXDs per share, times 1e12. See below.
+        address strategy;           //Which Protocol strategy is to be used. 
     }
 
     // such a cool token!
@@ -90,7 +92,7 @@ contract MasterChef is Ownable {
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
-    function add(uint256 _allocPoint, IERC20 _lpToken) external onlyOwner {
+    function add(uint256 _allocPoint, IERC20 _lpToken, address _strategy) external onlyOwner {
         require(_allocPoint <= MaxAllocPoint, "add: too many alloc points!!");
 
         checkForDuplicate(_lpToken); // ensure you cant add duplicate pools
@@ -103,7 +105,8 @@ contract MasterChef is Ownable {
             lpToken: _lpToken,
             allocPoint: _allocPoint,
             lastRewardTime: lastRewardTime,
-            accFGHSTPerShare: 0
+            accFGHSTPerShare: 0,
+            strategy: _strategy
         }));
     }
 
@@ -171,12 +174,15 @@ contract MasterChef is Ownable {
 
     // Deposit LP tokens to MasterChef for FGHST allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
+         
+        PoolInfo storage pool = poolInfo[_pid]; 
         UserInfo storage user = userInfo[_pid][msg.sender];
-
         updatePool(_pid);
-
+       
         uint256 pending = user.amount.mul(pool.accFGHSTPerShare).div(1e12).sub(user.rewardDebt);
+         address _strategy = PoolInfo[_pid].strategy;
+        address LP = PoolInfo[_pid]._lpToken; 
+        IStrategy strat = IStrategy(_strategy);
 
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accFGHSTPerShare).div(1e12);
@@ -185,7 +191,7 @@ contract MasterChef is Ownable {
             safeFGHSTTransfer(msg.sender, pending);
         }
         pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-
+        strat.deposit( _amount, LP);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -198,6 +204,10 @@ contract MasterChef is Ownable {
 
         updatePool(_pid);
 
+        address _strategy = PoolInfo[_pid].strategy;
+        address LP = PoolInfo[_pid]._lpToken; 
+        IStrategy strat = IStrategy(_strategy);
+
         uint256 pending = user.amount.mul(pool.accFGHSTPerShare).div(1e12).sub(user.rewardDebt);
 
         user.amount = user.amount.sub(_amount);
@@ -206,6 +216,7 @@ contract MasterChef is Ownable {
         if(pending > 0) {
             safeFGHSTTransfer(msg.sender, pending);
         }
+        strat.withdraw(LP, _amount);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
         
         emit Withdraw(msg.sender, _pid, _amount);
